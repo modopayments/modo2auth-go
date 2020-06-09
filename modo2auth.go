@@ -42,7 +42,7 @@ type tokenPayload struct {
 type Config struct {
 	APIIdentifier string
 	APISecret     string
-	Debug         bool // used only for testing purposes
+	Debug         bool // enable static values for testing
 }
 
 // Sign receives an http.Request and signs an Authorization Header
@@ -66,7 +66,7 @@ func (modo Config) Sign(req *http.Request) (*http.Request, error) {
 		}
 	}
 
-	token, err := getToken(apiURI, body, modo)
+	token, err := GetToken(apiURI, body, modo)
 	if err != nil {
 		return req, err
 	}
@@ -77,19 +77,19 @@ func (modo Config) Sign(req *http.Request) (*http.Request, error) {
 	return req, nil
 }
 
-// getToken ...
-func getToken(apiURI []byte, body []byte, modo Config) (string, error) {
+// GetToken returns an Authorization header string
+func GetToken(apiURI []byte, body []byte, modo Config) (string, error) {
 	// get credentials
 	apiIdentifier := []byte(modo.APIIdentifier)
 	apiSecret := []byte(modo.APISecret)
 
 	// get components
-	header := _makeHeader()
-	payload, err := _makePayload(apiURI, apiIdentifier, body, modo.Debug)
+	header := makeHeader()
+	payload, err := makePayload(apiURI, apiIdentifier, body, modo.Debug)
 	if err != nil {
 		return "", err
 	}
-	signature := _makeSignature(header, payload, apiSecret)
+	signature := makeSignature(header, payload, apiSecret)
 
 	// concat final string
 	token := "MODO2 " + string(header) + "." + string(payload) + "." + string(signature)
@@ -97,49 +97,49 @@ func getToken(apiURI []byte, body []byte, modo Config) (string, error) {
 	return token, nil
 }
 
-func _makeHeader() []byte {
+func makeHeader() []byte {
 	data := tokenHeader{Alg: "HS256", Typ: "JWT"}
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return nil
 	}
 
-	return _base64URLEncode(jsonData)
+	return base64URLEncode(jsonData)
 }
 
-func _makePayload(apiURI []byte, apiIdentifier []byte, body []byte, debug bool) ([]byte, error) {
+func makePayload(apiURI []byte, apiIdentifier []byte, body []byte, debug bool) ([]byte, error) {
 	iat := time.Now().Unix() // in seconds
 	if debug {
 		// static time for testing
 		iat = int64(1590072685)
 	}
 
-	bodyHash := _bodyHash([]byte(body)) // hex digest of sha256 of data
+	hashedBody := bodyHash([]byte(body)) // hex digest of sha256 of data
 
 	payload := tokenPayload{
 		Iat:           iat,
 		APIIdentifier: JSONData(apiIdentifier),
 		APIUri:        JSONData(apiURI),
-		BodyHash:      JSONData(bodyHash),
+		BodyHash:      JSONData(hashedBody),
 	}
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
-	return _base64URLEncode(jsonData), nil
+	return base64URLEncode(jsonData), nil
 }
 
-func _makeSignature(header []byte, payload []byte, secret []byte) []byte {
+func makeSignature(header []byte, payload []byte, secret []byte) []byte {
 	hash := hmac.New(sha256.New, secret)
 	hash.Write(header)
 	hash.Write([]byte{'.'})
 	hash.Write(payload)
 	signature := hash.Sum(nil)
 
-	return _base64URLEncode(signature)
+	return base64URLEncode(signature)
 }
 
-func _bodyHash(body []byte) []byte {
+func bodyHash(body []byte) []byte {
 	hasher := sha256.New()
 	hasher.Write(body)
 	hash := hasher.Sum(nil)
@@ -149,7 +149,7 @@ func _bodyHash(body []byte) []byte {
 	return hashHex
 }
 
-func _base64URLEncode(data []byte) []byte {
+func base64URLEncode(data []byte) []byte {
 	enc := base64.URLEncoding.WithPadding(base64.NoPadding)
 	encoded := make([]byte, enc.EncodedLen(len(data)))
 	enc.Encode(encoded, data)

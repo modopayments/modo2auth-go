@@ -110,9 +110,9 @@ func main() {
 
 # API
 
-## `ID({})`
+## `Config({})`
 
-Returns a Modo2Api ID struct.
+Returns a Modo2Api Config struct.
 
 - `APIIdentifier` (string) - API key from Modo
 - `APISecret` (string) - API secret from Modo
@@ -124,7 +124,7 @@ Returns an `*http.Request` with a Modo2Auth token added as an Authorization head
 
 `http.Request` (object) - HTTP request being made
 
-## `getToken(apiURI, body, modo)`
+## `GetToken(apiURI, body, modo)`
 
 Returns a Modo2Auth token (string) to be added to an HTTP request as an Authorization header (`{Authorization: value}`).
 

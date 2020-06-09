@@ -91,7 +91,7 @@ func TestGetToken(test *testing.T) {
 	expected :=
 		"MODO2 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1OTAwNzI2ODUsImFwaV9pZGVudGlmaWVyIjoiN2cwVUFwaXBNcHVKMVZPT09IV0pOSVpIN1ZaSU5iMDgiLCJhcGlfdXJpIjoiL3Rlc3QiLCJib2R5X2hhc2giOiI0NmI4ZGFkMWM2OWNiZDUwMGU5ZDFmZTJmMmVjZTM1N2M4NGM2ZTM2Y2U3YTg2MGJmMTQ2NzJiNGI3NDBhZjE5In0.sWjjz_MpnSv8Z31gNpEm1cmDhN7MK7Z3ix61RbDRL7g"
 
-	token, err := getToken(apiURI, body, modo)
+	token, err := GetToken(apiURI, body, modo)
 
 	if err != nil {
 		test.Error(err)
@@ -102,7 +102,7 @@ func TestGetToken(test *testing.T) {
 }
 
 func TestMakeHeader(test *testing.T) {
-	header := _makeHeader()
+	header := makeHeader()
 	expected := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
 	data := string(header)
 
@@ -113,7 +113,7 @@ func TestMakeHeader(test *testing.T) {
 
 func TestBodyHash(test *testing.T) {
 	jsonData := mockBody()
-	hashedBody := _bodyHash(jsonData)
+	hashedBody := bodyHash(jsonData)
 	data := string(hashedBody)
 	expected := "46b8dad1c69cbd500e9d1fe2f2ece357c84c6e36ce7a860bf14672b4b740af19"
 
@@ -126,7 +126,7 @@ func TestMakePayload(test *testing.T) {
 	apiIdentifier := []byte("7g0UApipMpuJ1VOOOHWJNIZH7VZINb08")
 	apiURI := []byte("/payouts/minimum?action=complete")
 	body := mockBody()
-	payload, err := _makePayload(apiURI, apiIdentifier, body, true)
+	payload, err := makePayload(apiURI, apiIdentifier, body, true)
 	data := string(payload)
 	expected := "eyJpYXQiOjE1OTAwNzI2ODUsImFwaV9pZGVudGlmaWVyIjoiN2cwVUFwaXBNcHVKMVZPT09IV0pOSVpIN1ZaSU5iMDgiLCJhcGlfdXJpIjoiL3BheW91dHMvbWluaW11bT9hY3Rpb249Y29tcGxldGUiLCJib2R5X2hhc2giOiI0NmI4ZGFkMWM2OWNiZDUwMGU5ZDFmZTJmMmVjZTM1N2M4NGM2ZTM2Y2U3YTg2MGJmMTQ2NzJiNGI3NDBhZjE5In0"
 
@@ -139,10 +139,10 @@ func TestMakePayload(test *testing.T) {
 }
 
 func TestMakeSignature(test *testing.T) {
-	header := _makeHeader()
+	header := makeHeader()
 	payload := []byte("eyJpYXQiOjE1OTAwNzI2ODUsImFwaV9pZGVudGlmaWVyIjoiN2cwVUFwaXBNcHVKMVZPT09IV0pOSVpIN1ZaSU5iMDgiLCJhcGlfdXJpIjoiL3BheW91dHMvbWluaW11bT9hY3Rpb249Y29tcGxldGUiLCJib2R5X2hhc2giOiI0NmI4ZGFkMWM2OWNiZDUwMGU5ZDFmZTJmMmVjZTM1N2M4NGM2ZTM2Y2U3YTg2MGJmMTQ2NzJiNGI3NDBhZjE5In0")
 	apiSecret := []byte("20I1s7GH7-pgn9041cgWlBKU8pcA1I4CCNpGuvu_xL4K-GnRSy3Q6IBtA5LYlIjy")
-	signature := _makeSignature(header, payload, apiSecret)
+	signature := makeSignature(header, payload, apiSecret)
 	data := string(signature)
 	expected := "lE865md6iVe42QyAGMpcm4bJntMACcDISfCxMrKzOuo"
 
