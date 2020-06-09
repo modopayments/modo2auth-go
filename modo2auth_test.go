@@ -16,8 +16,8 @@ func mockBody() []byte {
 	return jsonData
 }
 
-func mockModo() ID {
-	return ID{
+func mockModo() Config {
+	return Config{
 		APIIdentifier: "7g0UApipMpuJ1VOOOHWJNIZH7VZINb08",
 		APISecret:     "20I1s7GH7-pgn9041cgWlBKU8pcA1I4CCNpGuvu_xL4K-GnRSy3Q6IBtA5LYlIjy",
 		Debug:         true,

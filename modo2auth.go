@@ -38,15 +38,15 @@ type tokenPayload struct {
 	BodyHash      JSONData `json:"body_hash"`
 }
 
-// ID holds API credentials for communicating with Modo servers, as well as an optional `debug` flag for testing
-type ID struct {
+// Config holds API credentials for communicating with Modo servers, as well as an optional `debug` flag for testing
+type Config struct {
 	APIIdentifier string
 	APISecret     string
 	Debug         bool // used only for testing purposes
 }
 
 // Sign receives an http.Request and signs an Authorization Header
-func (modo ID) Sign(req *http.Request) (*http.Request, error) {
+func (modo Config) Sign(req *http.Request) (*http.Request, error) {
 	apiURI := []byte(req.URL.Path)
 
 	// get body depending on method of request
@@ -78,7 +78,7 @@ func (modo ID) Sign(req *http.Request) (*http.Request, error) {
 }
 
 // getToken ...
-func getToken(apiURI []byte, body []byte, modo ID) (string, error) {
+func getToken(apiURI []byte, body []byte, modo Config) (string, error) {
 	// get credentials
 	apiIdentifier := []byte(modo.APIIdentifier)
 	apiSecret := []byte(modo.APISecret)
