@@ -13,29 +13,15 @@ import (
 	"time"
 )
 
-// JSONData ...
-type JSONData []byte
-
-// UnmarshalText ...
-func (d *JSONData) UnmarshalText(data []byte) error {
-	*d = data
-	return nil
-}
-
-// MarshalText ...
-func (d JSONData) MarshalText() ([]byte, error) {
-	return d, nil
-}
-
 type tokenHeader struct {
 	Alg string `json:"alg"`
 	Typ string `json:"typ"`
 }
 type tokenPayload struct {
-	Iat           int64    `json:"iat"`
-	APIIdentifier JSONData `json:"api_identifier"`
-	APIUri        JSONData `json:"api_uri"`
-	BodyHash      JSONData `json:"body_hash"`
+	Iat           int64  `json:"iat"`
+	APIIdentifier string `json:"api_identifier"`
+	APIUri        string `json:"api_uri"`
+	BodyHash      string `json:"body_hash"`
 }
 
 // Config holds API credentials for communicating with Modo servers, as well as an optional `debug` flag for testing
@@ -113,14 +99,12 @@ func makePayload(apiURI []byte, apiIdentifier []byte, body []byte, debug bool) (
 		// static time for testing
 		iat = int64(1590072685)
 	}
-
 	hashedBody := bodyHash([]byte(body)) // hex digest of sha256 of data
-
 	payload := tokenPayload{
 		Iat:           iat,
-		APIIdentifier: JSONData(apiIdentifier),
-		APIUri:        JSONData(apiURI),
-		BodyHash:      JSONData(hashedBody),
+		APIIdentifier: string(apiIdentifier),
+		APIUri:        string(apiURI),
+		BodyHash:      string(hashedBody),
 	}
 	jsonData, err := json.Marshal(payload)
 	if err != nil {

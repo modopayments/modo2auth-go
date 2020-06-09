@@ -25,44 +25,44 @@ func mockModo() Config {
 }
 
 // TODO: Resolve how/if/when to run simple integration test against real server
-func TestIntegrationGet(test *testing.T) {
-	modo := mockModo()
-	modo.Debug = false
-	apiHost := "http://localhost:82"
-	apiURI := "/v2/vault/public_key"
-	req, _ := http.NewRequest("GET", apiHost+apiURI, nil) // Test path, Test body absence is okay?
-	signedReq, _ := modo.Sign(req)
-	resp, _ := http.DefaultClient.Do(signedReq)
+// func TestIntegrationGet(test *testing.T) {
+// 	modo := mockModo()
+// 	modo.Debug = false
+// 	apiHost := "http://localhost:82"
+// 	apiURI := "/v2/vault/public_key"
+// 	req, _ := http.NewRequest("GET", apiHost+apiURI, nil) // Test path, Test body absence is okay?
+// 	signedReq, _ := modo.Sign(req)
+// 	resp, _ := http.DefaultClient.Do(signedReq)
 
-	if resp.StatusCode != 200 {
-		test.Errorf("Expected 200 but got: %v", resp.StatusCode)
-	}
-}
-func TestIntegrationPost(test *testing.T) {
-	// format body data
-	data := map[string]string{
-		"start_date": "2020-05-01T00:00:00Z",
-		"end_date":   "2020-05-26T00:00:00Z",
-	}
-	jsonData, _ := json.Marshal(data)
-	body := bytes.NewBuffer(jsonData)
+// 	if resp.StatusCode != 200 {
+// 		test.Errorf("Expected 200 but got: %v", resp.StatusCode)
+// 	}
+// }
+// func TestIntegrationPost(test *testing.T) {
+// 	// format body data
+// 	data := map[string]string{
+// 		"start_date": "2020-05-01T00:00:00Z",
+// 		"end_date":   "2020-05-26T00:00:00Z",
+// 	}
+// 	jsonData, _ := json.Marshal(data)
+// 	body := bytes.NewBuffer(jsonData)
 
-	modo := mockModo()
-	modo.Debug = false
-	apiHost := "http://localhost:82"
-	apiURI := "/v2/reports"
+// 	modo := mockModo()
+// 	modo.Debug = false
+// 	apiHost := "http://localhost:82"
+// 	apiURI := "/v2/reports"
 
-	req, _ := http.NewRequest("POST", apiHost+apiURI, body)
-	signedReq, _ := modo.Sign(req)
-	resp, err := http.DefaultClient.Do(signedReq)
-	if err != nil {
-		test.Error("err", err)
-	}
+// 	req, _ := http.NewRequest("POST", apiHost+apiURI, body)
+// 	signedReq, _ := modo.Sign(req)
+// 	resp, err := http.DefaultClient.Do(signedReq)
+// 	if err != nil {
+// 		test.Error("err", err)
+// 	}
 
-	if resp.StatusCode != 200 {
-		test.Errorf("Expected 200 but got: %v", resp.StatusCode)
-	}
-}
+// 	if resp.StatusCode != 200 {
+// 		test.Errorf("Expected 200 but got: %v", resp.StatusCode)
+// 	}
+// }
 
 func TestSign(test *testing.T) {
 	apiURI := "/test"

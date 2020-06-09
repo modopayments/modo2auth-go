@@ -12,18 +12,12 @@
 These values will be used when intantiating the library.
 
 # Install
-Presently, the github repo is private, so you'll need to tell `go` that:
-```bash
-# add env var via `~/.zshrc` or `~/.bashrc` or the like
-export GOPRIVATE="github.com/modopayments-ux,github.com/modopayments"
-```
-Restart your terminal
-
-
 ```bash
 # in the root of the project
 go get github.com/modopayments-ux/modo2auth-go
 ```
+
+Note: This package assumes your project to be a [go module](https://blog.golang.org/using-go-modules). If it is not, you may get an error looking for a `main()` function definition.
 
 # Example Usage
 
@@ -35,24 +29,24 @@ Here's an example using `...` to make requests. You can use your preferred metho
 package main
 
 import (
-  "fmt" // for example
+	"fmt" // for example
 	"io/ioutil" // for example
 	"net/http"
 
-  // 1. IMPORT
+	// 1. IMPORT
 	"github.com/modopayments-ux/modo2auth-go"
 )
 
 func main() {
-  // 2. INSTANTIATE - get these from MODO
-	modo := modo2auth.ID{
+	// 2. INSTANTIATE - get these from MODO
+	modo := modo2auth.Config{
 		APIIdentifier: "...",
 		APISecret:     "...",
-  }
+	}
   
-  // 3. SIGN & SEND REQUEST
+	// 3. SIGN & SEND REQUEST
 	apiHOST := "http://localhost:82"
-  apiURI := "/v2/vault/public_key"  
+	apiURI := "/v2/vault/public_key"  
 	req, _ := http.NewRequest("GET", apiHOST+apiURI, nil)
 	signedReq, _ := modo.Sign(req)
 	resp, _ := http.DefaultClient.Do(signedReq)
@@ -69,41 +63,41 @@ func main() {
 package main
 
 import (
-  "fmt" // for example
+	"fmt" // for example
 	"io/ioutil" // for example
 	"net/http"
 
-  // 1. IMPORT
+	// 1. IMPORT
 	"github.com/modopayments-ux/modo2auth-go"
 )
 
 func main() {
-  // 2. INSTANTIATE - get these from MODO
-  modo := modo2auth.ID{
+	// 2. INSTANTIATE - get these from MODO
+	modo := modo2auth.Config{
 		APIIdentifier: "...",
 		APISecret:     "...",
-  }
+	}
 
-  // 3. SIGN & SEND REQUEST
-  apiHOST := "http://localhost:82"
-  apiURI := "/v2/reports"  
+	// 3. SIGN & SEND REQUEST
+	apiHOST := "http://localhost:82"
+	apiURI := "/v2/reports"  
   
-  // format body data
+	// format body data
 	data := map[string]string{
 		"start_date": "2020-05-01T00:00:00Z",
 		"end_date":   "2020-05-26T00:00:00Z",
 	}
 	jsonData, _ := json.Marshal(data)
-  body := bytes.NewBuffer(jsonData)
+	body := bytes.NewBuffer(jsonData)
   
-  // request
+	// request
 	req, _ := http.NewRequest("POST", apiHOST+apiURI, body)
 	signedReq, _ := modo.Sign(req)
-	resp, err := http.DefaultClient.Do(signedReq)
+	resp, _ := http.DefaultClient.Do(signedReq)
   
-  // response
-  respBody, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("Response body is",respBody)
+	// response
+	respBody, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("Response body is", string(respBody))
 }
 
 ```
