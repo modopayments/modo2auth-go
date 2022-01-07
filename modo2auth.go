@@ -7,120 +7,94 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
 )
 
+type JSONData []byte
+
+func (d *JSONData) UnmarshalText(data []byte) error {
+	*d = data
+	return nil
+}
+
+func (d JSONData) MarshalText() ([]byte, error) {
+	return d, nil
+}
+
+type authenticationHeader struct {
+	Iat           int64    `json:"iat"`
+	ApiIdentifier JSONData `json:"api_identifier"`
+	ApiUri        string   `json:"api_uri"`
+	BodyHash      JSONData `json:"body_hash"`
+}
+
 type tokenHeader struct {
 	Alg string `json:"alg"`
 	Typ string `json:"typ"`
 }
-type tokenPayload struct {
-	Iat           int64  `json:"iat"`
-	APIIdentifier string `json:"api_identifier"`
-	APIUri        string `json:"api_uri"`
-	BodyHash      string `json:"body_hash"`
+
+// ID holds API credentials for communicating with Modo servers, as well as an optional `debug` flag for testing
+type ID struct {
+	Key    string
+	Secret string
 }
 
-// Config holds API credentials for communicating with Modo servers, as well as an optional `debug` flag for testing
-type Config struct {
-	APIIdentifier string
-	APISecret     string
-	Debug         bool // enable static values for testing
-}
-
-// Sign receives an http.Request and signs an Authorization Header
-func (modo Config) Sign(req *http.Request) (*http.Request, error) {
-	apiURI := []byte(req.URL.Path)
-
-	// get body depending on method of request
-	var body []byte
-	var err error
-	if req.Method == "GET" {
-		body = []byte("")
-	} else {
-		// get the body data
-		body, err = ioutil.ReadAll(req.Body)
-		// restore the io.ReadCloser to its original state
-		req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-
-		if err != nil {
-			fmt.Println("err", err)
-			return req, err
-		}
+// Sign adds an Authorization header to an http.request
+func (id ID) Sign(req *http.Request) error {
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return err
 	}
 
-	token, err := GetToken(apiURI, body, modo)
+	signature, err := Sign(req.URL.Path, time.Now(), body, []byte(id.Key), []byte(id.Secret))
 	if err != nil {
-		return req, err
+		return err
 	}
 
-	req.Header.Set("Authorization", token)
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", signature)
+	req.Body = ioutil.NopCloser(bytes.NewReader(body))
 
-	return req, nil
+	return nil
 }
 
-// GetToken returns an Authorization header string
-func GetToken(apiURI []byte, body []byte, modo Config) (string, error) {
-	// get credentials
-	apiIdentifier := []byte(modo.APIIdentifier)
-	apiSecret := []byte(modo.APISecret)
-
-	// get components
-	header := makeHeader()
-	payload, err := makePayload(apiURI, apiIdentifier, body, modo.Debug)
-	if err != nil {
+// Sign returns the signature to use for a request of [data] to the endpoint [api]
+func Sign(api string, iat time.Time, data []byte, key, secret []byte) (signature string, err error) {
+	token, authData := generateToken(api, data)
+	authData.ApiIdentifier = key
+	authData.Iat = iat.Unix()
+	var authBytes []byte
+	if authBytes, err = json.Marshal(authData); err != nil {
 		return "", err
 	}
-	signature := makeSignature(header, payload, apiSecret)
-
-	// concat final string
-	token := "MODO2 " + string(header) + "." + string(payload) + "." + string(signature)
-
-	return token, nil
+	authData64 := base64URLEncode(authBytes)
+	sig := generateSignature(token[len("MODO2 "):], authData64, secret)
+	return string(token) + "." + string(authData64) + "." + string(sig), nil
 }
 
-func makeHeader() []byte {
-	data := tokenHeader{Alg: "HS256", Typ: "JWT"}
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return nil
-	}
-
-	return base64URLEncode(jsonData)
-}
-
-func makePayload(apiURI []byte, apiIdentifier []byte, body []byte, debug bool) ([]byte, error) {
-	iat := time.Now().Unix() // in seconds
-	if debug {
-		// static time for testing
-		iat = int64(1590072685)
-	}
-	hashedBody := bodyHash([]byte(body)) // hex digest of sha256 of data
-	payload := tokenPayload{
-		Iat:           iat,
-		APIIdentifier: string(apiIdentifier),
-		APIUri:        string(apiURI),
-		BodyHash:      string(hashedBody),
-	}
-	jsonData, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	return base64URLEncode(jsonData), nil
-}
-
-func makeSignature(header []byte, payload []byte, secret []byte) []byte {
+func generateSignature(token, authData []byte, secret []byte) []byte {
 	hash := hmac.New(sha256.New, secret)
-	hash.Write(header)
+	hash.Write(token)
 	hash.Write([]byte{'.'})
-	hash.Write(payload)
-	signature := hash.Sum(nil)
+	hash.Write(authData)
 
-	return base64URLEncode(signature)
+	signature := hash.Sum(nil)
+	base64Signature := base64URLEncode(signature)
+
+	return base64Signature
+}
+
+func generateToken(endpoint string, body []byte) (token []byte, auth authenticationHeader) {
+	jsonTokenHeader, _ := json.Marshal(tokenHeader{Alg: "HS256", Typ: "JWT"})
+	tokenData := base64URLEncode(jsonTokenHeader)
+	token = make([]byte, len(tokenData)+len("MODO2 "))
+	copy(token[copy(token, "MODO2 "):], tokenData)
+	auth = authenticationHeader{
+		BodyHash: bodyHash(body),
+		ApiUri:   endpoint,
+	}
+	return
 }
 
 func bodyHash(body []byte) []byte {
