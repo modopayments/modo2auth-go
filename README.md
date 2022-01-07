@@ -40,7 +40,7 @@ import (
 	"github.com/modopayments-ux/modo2auth_go"
 )
 
-const endpoint = "http://modopayments.com"
+const endpoint = "http[URL_HERE]"
 
 func main() {
     id := modo2auth_go.ID{
